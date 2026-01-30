@@ -147,6 +147,11 @@ android {
         noCompress += ['onnx', 'bin', 'npy', 'model', 'jsonl', 'json']
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "civil-defense-app-${variant.versionName}-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`
