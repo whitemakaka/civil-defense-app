@@ -1,0 +1,9 @@
+accelerate
+huggingface_hub
+numpy<2
+onnx
+onnxruntime
+optimum[onnxruntime]
+sentence-transformers
+torch
+transformers
