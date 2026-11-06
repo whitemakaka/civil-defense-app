@@ -1,0 +1,251 @@
+[
+  {
+    "id": "national_guides",
+    "detailByCountry": true,
+    "label": {
+      "pl": "Oficjalne poradniki i materiały rządowe",
+      "en": "Official guides and government materials"
+    },
+    "sourceIds": [
+      "pl_security_handbook_2025",
+      "ee_be_prepared_2022_en",
+      "fi_prepared_people_cope_better_2024_en",
+      "lt_war_or_crisis_2024_en",
+      "lv_crisis_guide_2024_en",
+      "se_crisis_or_war_2024_en",
+      "ua_dangerous_events_2024_ua",
+      "ua_life_during_war_2024_ua",
+      "pl_government_alarm_signals"
+    ]
+  },
+  {
+    "id": "cdc",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Centra Kontroli i Prewencji Chorób (CDC)",
+      "en": "Centers for Disease Control and Prevention (CDC)"
+    },
+    "sourceIds": [
+      "cdc_choosing_water_filters",
+      "cdc_emergency_water",
+      "cdc_niosh_white_phosphorus",
+      "cdc_frostbite"
+    ]
+  },
+  {
+    "id": "erc",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Europejska Rada Resuscytacji",
+      "en": "European Resuscitation Council"
+    },
+    "sourceIds": [
+      "erc_adult_basic_life_support",
+      "erc_first_aid"
+    ]
+  },
+  {
+    "id": "mswia",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Ministerstwo Spraw Wewnętrznych i Administracji",
+      "en": "Polish Ministry of the Interior and Administration"
+    },
+    "sourceIds": [
+      "pl_mswia_emergency_number_112",
+      "pl_mswia_how_to_report_112",
+      "pl_mswia_alarm112_app",
+      "pl_mswia_call_police",
+      "pl_mswia_flood",
+      "pl_mswia_cybersecurity",
+      "pl_mswia_toxic_contamination"
+    ]
+  },
+  {
+    "id": "rcb",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Rządowe Centrum Bezpieczeństwa",
+      "en": "Polish Government Centre for Security"
+    },
+    "sourceIds": ["pl_rcb_heating_outage"]
+  },
+  {
+    "id": "paa",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Państwowa Agencja Atomistyki",
+      "en": "Polish National Atomic Energy Agency"
+    },
+    "sourceIds": ["pl_paa_stable_iodine"]
+  },
+  {
+    "id": "psp",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Państwowa Straż Pożarna",
+      "en": "Polish State Fire Service"
+    },
+    "sourceIds": [
+      "pl_kgpsp_aed",
+      "pl_kgpsp_medical_rescue",
+      "pl_kgpsp_safe_seniors",
+      "pl_psp_bedzin_severe_frost",
+      "pl_kgpsp_fires",
+      "pl_kgpsp_safe_evacuation",
+      "pl_kgpsp_ice_self_rescue",
+      "pl_psp_rzeszow_ice_rescue",
+      "pl_psp_srem_carbon_monoxide"
+    ]
+  },
+  {
+    "id": "nfz",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Narodowy Fundusz Zdrowia",
+      "en": "Polish National Health Fund"
+    },
+    "sourceIds": [
+      "pl_nfz_drowning_first_aid",
+      "pl_nfz_emergency_medical_help",
+      "pl_nfz_burns",
+      "pl_nfz_heat_prevention",
+      "pl_nfz_frostbite",
+      "pl_nfz_fireworks",
+      "pl_nfz_adder_bite",
+      "pl_nfz_poisoning"
+    ]
+  },
+  {
+    "id": "tauron",
+    "detailByCountry": false,
+    "label": {
+      "pl": "TAURON Dystrybucja",
+      "en": "TAURON Dystrybucja"
+    },
+    "sourceIds": ["pl_tauron_broken_power_line", "pl_tauron_safe_farmer"]
+  },
+  {
+    "id": "psg",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Polska Spółka Gazownictwa",
+      "en": "Polska Spółka Gazownictwa"
+    },
+    "sourceIds": ["pl_psg_gas_leak_faq", "pl_psg_gas_safety"]
+  },
+  {
+    "id": "pec_belchatow",
+    "detailByCountry": false,
+    "showInIntro": false,
+    "label": {
+      "pl": "Przedsiębiorstwo Energetyki Cieplnej w Bełchatowie",
+      "en": "Przedsiębiorstwo Energetyki Cieplnej w Bełchatowie"
+    },
+    "sourceIds": ["pl_pec_belchatow_heating_failure"]
+  },
+  {
+    "id": "police",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Policja",
+      "en": "Polish Police"
+    },
+    "sourceIds": [
+      "pl_police_firework_safety",
+      "pl_police_hypothermia_first_aid",
+      "pl_police_winter_road_safety",
+      "pl_police_unexploded_ordnance"
+    ]
+  },
+  {
+    "id": "sanitary_inspection",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Państwowa Inspekcja Sanitarna",
+      "en": "Polish State Sanitary Inspection"
+    },
+    "sourceIds": ["pl_psse_kamien_frostbite", "pl_gis_flood_water", "pl_psse_luban_heatstroke", "pl_psse_znin_rabies", "pl_psse_kamien_tick", "pl_psse_wabrzezno_stings", "pl_wsse_bydgoszcz_mercury", "pl_wsse_gdansk_mushroom_safety"]
+  },
+  {
+    "id": "mz",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Ministerstwo Zdrowia",
+      "en": "Polish Ministry of Health"
+    },
+    "sourceIds": ["pl_mz_heatstroke", "pl_mz_emergency_first_aid"]
+  },
+  {
+    "id": "wody_polskie",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Wody Polskie",
+      "en": "Polish Waters"
+    },
+    "sourceIds": ["pl_wody_polskie_ice_safety"]
+  },
+  {
+    "id": "cert_pl",
+    "detailByCountry": false,
+    "label": {
+      "pl": "CERT Polska",
+      "en": "CERT Polska"
+    },
+    "sourceIds": ["pl_cert_contact", "pl_cert_account_takeover", "pl_cert_phone_safety"]
+  },
+  {
+    "id": "epa",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Agencja Ochrony Środowiska USA (EPA)",
+      "en": "US Environmental Protection Agency (EPA)"
+    },
+    "sourceIds": ["us_epa_mercury_spill", "us_epa_mercury_thermometer"]
+  },
+  {
+    "id": "rcuk",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Resuscitation Council UK",
+      "en": "Resuscitation Council UK"
+    },
+    "sourceIds": ["rcuk_community_cpr_training"]
+  },
+  {
+    "id": "nhs",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Brytyjska Narodowa Służba Zdrowia (NHS)",
+      "en": "UK National Health Service (NHS)"
+    },
+    "sourceIds": ["uk_nhs_eye_injuries", "nhs_burns_scalds", "nhs_snake_bites"]
+  },
+  {
+    "id": "zpe",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Zintegrowana Platforma Edukacyjna",
+      "en": "Polish Integrated Educational Platform"
+    },
+    "sourceIds": ["pl_zpe_burns_frostbite", "pl_zpe_ice_drowning"]
+  },
+  {
+    "id": "civil_protection_kharkiv",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Centrum Szkoleniowo-Metodyczne Ochrony Ludności i Bezpieczeństwa Życia Obwodu Charkowskiego",
+      "en": "Kharkiv Region Training and Methodology Centre for Civil Protection and Life Safety"
+    },
+    "sourceIds": ["ua_kharkiv_explosive_objects_guidance"]
+  },
+  {
+    "id": "ifrc",
+    "detailByCountry": false,
+    "label": {
+      "pl": "Międzynarodowa Federacja Stowarzyszeń Czerwonego Krzyża i Czerwonego Półksiężyca (IFRC)",
+      "en": "International Federation of Red Cross and Red Crescent Societies (IFRC)"
+    },
+    "sourceIds": ["ifrc_first_aid_guidelines"]
+  }
+]

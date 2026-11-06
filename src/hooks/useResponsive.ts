@@ -17,21 +17,6 @@ export function getBreakpointName(width: number): Breakpoint {
   return 'base';
 }
 
-export function useBreakpoint() {
-  const { width, height } = useWindowDimensions();
-  const name = getBreakpointName(width);
-  return {
-    width,
-    height,
-    name,
-    isBase: name === 'base',
-    isSm: name === 'sm',
-    isMd: name === 'md',
-    isLg: name === 'lg',
-    isXl: name === 'xl',
-  };
-}
-
 type ValuesByBreakpoint<T> = Partial<Record<Breakpoint, T>> & { base?: T };
 
 export function useResponsiveValue<T>(values: ValuesByBreakpoint<T>): T {

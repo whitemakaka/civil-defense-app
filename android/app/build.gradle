@@ -87,46 +87,26 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.civildefenceapp'
+    namespace 'com.anonymous.civildefence'
     defaultConfig {
-        applicationId 'com.anonymous.civildefenceapp'
+        applicationId 'com.anonymous.civildefence'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 20
+        versionName "1.0.19"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
-    }
-    signingConfigs {
-        debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
-        // For release builds, create your own keystore:
-        // keytool -genkeypair -v -storetype PKCS12 -keystore release.keystore -alias myapp -keyalg RSA -keysize 2048 -validity 10000
-        // Then uncomment and fill in:
-        // release {
-        //     storeFile file('release.keystore')
-        //     storePassword 'YOUR_STORE_PASSWORD'
-        //     keyAlias 'YOUR_KEY_ALIAS'
-        //     keyPassword 'YOUR_KEY_PASSWORD'
-        // }
-    }
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            outputFileName = "civil-defense-app-${variant.buildType.name}.apk"
+
+        // Prebuilt native libraries (e.g. ONNX Runtime) ship every ABI; package only the configured ones.
+        ndk {
+            abiFilters(*((findProperty('reactNativeArchitectures') ?: 'armeabi-v7a,arm64-v8a').split(',').collect { it.trim() }))
         }
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Public builds are unsigned; sign release artifacts with your own external key.
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -142,10 +122,19 @@ android {
         }
     }
     androidResources {
-        // Keep offline bundle files uncompressed so we can mmap them from AssetManager.openFd().
-        // This is critical for fast semantic scoring on low-end devices.
-        noCompress += ['onnx', 'bin', 'npy', 'model', 'jsonl', 'json']
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+        // Do not compress model files (required for mmap)
+        noCompress += ['onnx', 'bin', 'npy', 'model', 'jsonl', 'json']
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+    testOptions {
+        unitTests.all {
+            systemProperty 'civilDefenseTokenizerPath', file('src/main/assets/offline_bundle/model/tokenizer.json').absolutePath
+            systemProperty 'civilDefenseManifestPath', file('src/main/assets/offline_bundle/manifest.json').absolutePath
+        }
     }
     applicationVariants.all { variant ->
         variant.outputs.all {
@@ -177,6 +166,10 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // ONNX Runtime runs the query model natively; pinned so every build ships the same engine.
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20180813")
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

@@ -1,221 +1,142 @@
-# Civil Defense Search
+# Civil Defence
 
-🔍 Offline search engine for civil defense guidance — find quotes from official handbooks instantly.
+Offline semantic search for civil-defence and emergency-preparedness guidance, in Polish and English.
 
-## About
-
-Offline hybrid search (keyword + semantic) that runs entirely on your device. No internet connection required after installation.
-
-- **Search Engine:** Keyword + Vector (sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
-- **Languages:** Polish / English
-- **Platform:** Android
-- **Content:** Official civil defense handbooks (Poland)
+Find practical notes by describing your question in your own words. Search runs on the device and returns complete notes with their sources. The app retrieves prepared content; it does not generate answers.
 
 ## Features
 
-- 🔍 **Hybrid Search** — combines keyword matching with semantic understanding
-- 🔒 **100% Offline** — works without internet after installation
-- 🛡️ **Privacy first** — no data collection, no telemetry, no query logging
-- ⚡ **Fast & Efficient** — optimized for mobile devices
-- 🌙 **Dark/Light mode** — AMOLED black for battery saving
-- 🇵🇱🇬🇧 **Bilingual** — Polish and English interface + content
-- 📱 **Mobile-first UI** — modern design with smooth animations
+- **Semantic search:** matches the meaning of a question against individual passages and complete notes.
+- **One result per note:** local and global matches are combined without duplicate results.
+- **Relevant results only:** search starts at 3 characters; results below the relevance threshold are hidden.
+- **Complete guidance:** each result opens the full note, including its source references.
+- **Offline operation:** the model and search data are bundled into the installed app.
+- **Polish and English:** interface and note content are available in both languages.
+- **Light and dark themes.**
+- **Local privacy:** no search telemetry or query logging; conversation history stays in memory.
 
-## How It Works
+## How search works
 
-1. **You type** → query is tokenized and normalized (no diacritics)
-2. **Keyword stage** → find top 150-400 candidates by keyword matching
-3. **Vector stage** → rerank candidates by semantic similarity (cosine)
-4. **Hybrid ranking** → combine scores: `α × semantic + β × keyword`
-5. **Results** → display top 10 matching quotes with source info
+1. The question is embedded locally using **OPI-PIB/PolDense-17M** through ONNX Runtime.
+2. Its vector is compared with the local passage vectors and global whole-note vectors for the selected language.
+3. Each note is ranked using its best local match and its global match. The weights come from the bundle manifest.
+4. Results are grouped by note. The preview shows the best-matching passage; selecting it opens the complete note.
+5. Results are shown only when the best one scores at least `relevance_floor`, and only those within `relevance_delta` of the best. If nothing passes, the app reports that there is no good match.
 
-**Search settings:**
-- **Language filter:** PL / EN / All
-- **Search mode:** Fast (150 candidates) / Accurate (400 candidates)
-- **Sensitivity slider:** balance between semantic and keyword matching
-- **Battery mode:** Eco (2 threads) / Performance (4 threads)
-- **Auto-unload:** release model memory after idle
+The model uses an ONNX FP32 export and a ByteLevel BPE tokenizer. Document vectors are stored as INT8 with a per-vector FP16 scale. The model context limit and runtime parameters, including `minimum_query_length`, the local/global weights, `top_k` and the relevance threshold, are read from the `search` block of the manifest.
 
-## Data Sources
+Technical details: [model](docs/model/README.md) and [search bundle](docs/search-bundle/README.md).
 
-Content is sourced from official Polish civil defense handbooks:
+## Content and sources
 
-| # | Title (PL) | Title (EN) | Publisher |
-|---|------------|------------|-----------|
-| 1 | Bądź gotowy – poradnik na czas kryzysu i wojny | Get Ready | RCB (Rządowe Centrum Bezpieczeństwa) |
-| 2 | Poradnik bezpieczeństwa | Safety Handbook | RCB |
+Notes are prepared from civil-defence guides and public-safety guidance. The supplied bundle determines the available content. Each note includes its document references, page numbers or source links; the app also displays a source catalog.
 
-**Links:**
-- [Rządowe Centrum Bezpieczeństwa (RCB)](https://www.gov.pl/web/rcb)
+Search and reading bundled notes work offline. Opening an external source website requires a connection.
 
-## Embedding Model
+## Repository scope
 
-**Model:** `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-- **Dimension:** 384
-- **Languages:** 50+ (including Polish and English)
-- **License:** Apache 2.0
-- **Source:** [Hugging Face](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
+This repository contains the Android application, its tests, build configuration and documentation. Model preparation, content editing and embedding generation are handled separately.
 
-**Bundle validation:**
-The app validates the offline bundle on startup to ensure the embeddings were generated with the correct model. If there's a mismatch, vector search is disabled (keyword-only fallback).
+**A complete, compatible offline bundle is required to build and run the app.** Prepared Polish and English notes, local and global vectors, records and the manifest are included in [public/assets/offline_bundle/](public/assets/offline_bundle/README.md). The matching ONNX model and tokenizer are also included in its `model/` directory; no separate model download is needed. The tools that produce the bundle are maintained separately. The app does not download missing search assets on first launch.
 
-## Security & Privacy
+Private signing keys, passwords, local environment files, machine-specific SDK paths and generated build artifacts are excluded. Keep those files outside the public repository.
 
-- ✅ App does not collect any user data
-- ✅ App does not communicate with the internet after installation
-- ✅ Queries are not logged or saved to disk
-- ✅ Model runs locally on device
-- ✅ Open source — verify the code yourself
+## Building from source
 
-## Installation
+### Requirements
 
-### From Google Play
-*(Coming soon)*
+- Node.js and npm, compatible with the dependencies in `package-lock.json`.
+- A JDK and Android SDK compatible with the included Android project.
+- PowerShell for the release build script.
+- The complete offline bundle included in this repository, with notes, vectors, model and tokenizer.
 
-### From APK (Releases)
-1. Download APK from [Releases](../../releases)
-2. Enable "Install from unknown sources" in Android settings
-3. Install APK
-4. Download offline bundle (if not included in APK)
+Set `JAVA_HOME` and `ANDROID_HOME` in your local environment. Run the following commands from the repository root.
 
-### Offline Transfer (Nearby Share)
-Already installed? Share APK to another phone via Nearby Share — no internet needed.
+### Prepare dependencies and assets
 
-## Building from Source
-
-### Prerequisites
-```bash
-npm install
-```
-
-### Generate Offline Bundle
-
-The app requires an offline bundle (embeddings + records). See `src/search/README.md` for details.
-
-**Quick summary:**
-1. Prepare `records_meta.jsonl` (quotes from PDFs)
-2. Generate embeddings using `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
-3. Build keyword index: `python src/search/build_keyword_index.py`
-4. Create `manifest.json` with model info
-5. Place bundle in `assets/offline_bundle/`
-
-### Build Android
-
-**Important:** Before building, the offline bundle must be copied to Android assets.
-
-**Option 1: Use build script (recommended)**
 ```powershell
-.\build-release.ps1
-```
-This script automatically:
-1. Copies bundle from `public/assets/offline_bundle/` → `android/app/src/main/assets/offline_bundle/`
-2. Cleans and builds release APK
-
-**Option 2: Manual build**
-```bash
-# 1. Copy bundle to Android assets
-cp -r public/assets/offline_bundle/* android/app/src/main/assets/offline_bundle/
-
-# 2. Prebuild for Android (if needed)
-npx expo prebuild --platform android
-
-# 3. Build APK
-cd android
-./gradlew assembleRelease
+npm ci
 ```
 
-APK output: `android/app/build/outputs/apk/release/app-release.apk`
+The complete ready-to-use bundle is already in `public/assets/offline_bundle/`, including the matching model and tokenizer in `model/`. No separate data or model download is needed. Required file paths and SHA-256 hashes are listed in `manifest.json`. To use a different bundle location, change `bundle_directory` in `build-config.json`.
 
-**Bundle locations:**
-| Purpose | Path |
-|---------|------|
-| Source (development) | `public/assets/offline_bundle/` |
-| Android build target | `android/app/src/main/assets/offline_bundle/` |
+To use your own notes, prepare a complete replacement bundle with matching records and local/global vectors using the same model and tokenizer. Editing only the note text leaves the search vectors out of sync. Bundle-generation tools are not included in this repository.
+
+All bundle files must belong to the same prepared dataset and model. See the [bundle format](docs/search-bundle/README.md) for the required structure.
+
+### Validate and build
+
+With the included bundle:
+
+```powershell
+npx tsc --noEmit
+npm test
+.\build-release.ps1 -JavaHome $env:JAVA_HOME
+```
+
+The release script checks the bundle's file hashes and local/global vector counts, runs the application checks, copies the bundle into Android assets, and builds both outputs:
+
+| Output | Path |
+| --- | --- |
+| Unsigned APK | `dist/civil-defense-app-release-unsigned.apk` |
+| Unsigned Android App Bundle | `dist/civil-defense-app-release-unsigned.aab` |
+
+`npm test` runs the Node tests in `tests/*.test.cjs` against the bundle configured in `build-config.json`.
+
+Release builds include only ARM native libraries (`armeabi-v7a`, `arm64-v8a`), without x86 libraries for emulators, and the code is minified with R8. Resource shrinking is disabled because images referenced from JavaScript are resolved by name at runtime. Testing on an emulator requires an ARM system image or a separate debug build.
+
+Release builds have no Internet or storage permission: `android/app/src/release/AndroidManifest.xml` removes `INTERNET` (kept only in debug builds for Metro) and the `READ/WRITE_EXTERNAL_STORAGE` permissions added by the file libraries. Only `ACCESS_NETWORK_STATE` from ONNX Runtime remains; it allows no network access and needs no user consent. External links open in the system browser, and the "112" button opens the dialer with 112 filled in. UI icons come from `@expo/vector-icons`; copying text uses `expo-clipboard`.
+
+**Public release builds are unsigned.** Sign them with your own key before installation or publication. The public Android package is `com.anonymous.civildefence`.
 
 ### Development
 
-```bash
-npm start
+Once the Android assets have been prepared by the release script:
+
+```powershell
+npm run android
 ```
 
-Then press `a` for Android emulator or scan QR with Expo Go app.
+Development uses a native Android build, including the custom search module and ONNX Runtime. Expo Go alone cannot run these native modules. Android tooling manages the standard debug key locally.
 
-## Requirements
+## Project structure
 
-- **Android:** 8.0+ (API level 26+)
-- **Storage:** ~100-500MB (depends on bundle size)
-- **RAM:** ~300MB during search operation
-- **Battery:** Eco mode recommended for extended use
-
-## Project Structure
-
-```
-civil-defense-app/
-├── src/
-│   ├── features/
-│   │   ├── search/          # Search feature (hybrid search logic)
-│   │   │   ├── config.ts    # Model config (EMBEDDING_MODEL_ID, DIM)
-│   │   │   ├── types/       # TypeScript types
-│   │   │   ├── lib/         # Bundle validator, embedder
-│   │   │   └── components/  # SearchResultCard, SearchDetailScreen
-│   │   └── chat/            # Chat-like UI for search history
-│   ├── stores/
-│   │   └── settings/
-│   │       ├── settingsStore.tsx       # App settings (lang, theme)
-│   │       └── searchSettingsStore.tsx # Search settings (persistence)
-│   ├── search/              # Python tooling for bundle generation
-│   │   ├── offline_hybrid/  # Core search logic (Python)
-│   │   └── build_keyword_index.py
-│   └── samples/
-│       └── offline_bundle/  # Example bundle structure
-└── assets/
-    └── offline_bundle/      # Production bundle (embeddings + records)
+```text
+src/                   Application UI, search logic and settings
+android/               Android project, native tokenizer and vector scoring
+assets/images/         Application graphics
+public/assets/         Complete offline bundle, including model and tokenizer
+tests/                 Application tests
+docs/                  Model and bundle documentation
+build-config.json      Bundle location
+build-release.ps1      Bundle validation and APK/AAB build
 ```
 
-## Tech Stack
+The runtime assets are copied into `android/app/src/main/assets/offline_bundle/`. The complete input bundle is included in the repository; its generated Android copy and build outputs are excluded by `.gitignore`.
 
-- **Framework:** React Native (Expo)
-- **Language:** TypeScript
-- **Search:** Hybrid (keyword + vector)
-- **Storage:** AsyncStorage (settings persistence)
-- **Styling:** StyleSheet with custom theme system
-- **Architecture:** bulletproof-react pattern
+## Privacy and security
 
-## Contributing
+Search runs locally. Queries are not transmitted to a search service or saved to disk. The selected language and theme are saved in a local app file (`settings.json` in the app's private documents directory). The app also stores a welcome-screen completion flag. The model is read directly from the installed app; no second copy is written to storage. External links open a browser or another application with its own data handling.
 
-Contributions welcome! Please:
-1. Follow existing code style
-2. Keep privacy-first principles
-3. Submit issues/PRs directly on GitHub
+See the [privacy policy](PRIVACY_POLICY.md), [data policy](DATA_POLICY.md) and [security policy](SECURITY.md).
 
-## Contact & Original Project
+## Contributing and contact
 
-- **Official Repository:** [https://github.com/whitemakaka/civil-defense-app](https://github.com/whitemakaka/civil-defense-app)
-- **GitHub Issues:** [Report a bug or security issue](https://github.com/whitemakaka/civil-defense-app/issues)
-- **Email:** apps.whitemakaka@gmail.com
-- **Twitter/X:** [@whitemakaka](https://x.com/whitemakaka)
+Issues and pull requests are welcome. Keep search offline, preserve source attribution and include relevant checks with changes.
 
-*If you are viewing this on a fork, please refer to the official repository for the latest updates and security patches.*
+- [Project repository](https://github.com/whitemakaka/civil-defense-app)
+- [Issue tracker](https://github.com/whitemakaka/civil-defense-app/issues)
+- [Contact](mailto:apps.whitemakaka@gmail.com)
+- [X](https://x.com/whitemakaka)
 
-## Future Ideas (Proposals)
+### Making your own version
 
-These are potential directions for the project, with no commitment to implementation. Contributions in these areas are welcome:
-
-- 🌍 **More countries** — adding data bundles for other regions (Lithuania, Latvia, Estonia, etc.)
-- 🗺️ **Offline Shelter Maps** — integrating offline maps (e.g., OpenStreetMap) to show civil defense locations without internet
+The links shown in the app's information window are set in `src/config/links.json`. The source code, email and X fields are empty in this repository; fill them in with your own links and replace the website link. Change the package name in `app.json` and `android/app/build.gradle` (and the matching Kotlin package folder). Release builds from this repository are unsigned, so sign the APK or AAB with your own key before distributing it.
 
 ## License
 
-**App:** MIT
+Application code: [MIT](LICENSE). Source materials retain their respective licenses; consult their original publications before redistributing them.
 
-**Embedding Model:** Apache 2.0 — [sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)
+The included model, [OPI-PIB/PolDense-17M](https://huggingface.co/OPI-PIB/PolDense-17M), is provided under the [Gemma Terms of Use](https://ai.google.dev/gemma/terms). It was converted to ONNX format, with CLS pooling and L2 normalisation added to its output; the weights were not retrained. Use of the model is subject to the [Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy). Copies are included in [GEMMA_TERMS_OF_USE.txt](GEMMA_TERMS_OF_USE.txt) and [GEMMA_PROHIBITED_USE_POLICY.txt](GEMMA_PROHIBITED_USE_POLICY.txt). If you copy or distribute the model, include the [NOTICE](NOTICE) file and both copies, and pass on these use restrictions. The same notice is packaged into the app from `android/app/src/main/assets/NOTICE`.
 
-**Content:** Source materials are publicly available from RCB (Rządowe Centrum Bezpieczeństwa)
-
-## Disclaimer
-
-This app provides general guidance only and shows quotes from official handbooks. In emergency situations, always follow official instructions from local authorities.
-
----
-
-**Built with ❤️ for offline resilience**
+The app provides general preparedness information. In an emergency, follow current instructions from the relevant authorities and emergency services.

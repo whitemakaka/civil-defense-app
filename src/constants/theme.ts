@@ -17,70 +17,78 @@ export type AppTheme = {
     primaryMuted: string;
     primaryText: string;
     accent: string;
-    accentMuted: string;
     success: string;
     successMuted: string;
     warning: string;
-    warningMuted: string;
-    cardBg: string;
-    glowPrimary: string;
-    glowAccent: string;
+    danger: string;
+    dangerMuted: string;
+    emergency: string;
+    emergencyText: string;
+    overlay: string;
   };
 };
 
+/** Corner radii: controls, cards and bubbles, pills and the search field. */
+export const RADIUS = { sm: 12, md: 20, full: 999 } as const;
+
+/** Minimum touch target in dp (Android guideline). */
+export const MIN_TOUCH = 48;
+
+// Dark is the default and stays truly dark: near-black background, graphite surfaces,
+// warm orange accent taken from the logo. Every text pair meets WCAG 4.5:1.
 const darkTheme: AppTheme = {
   colors: {
-    background: '#09090B',
-    surface: '#18181B',
-    surfaceElevated: '#27272A',
-    border: '#3F3F46',
-    borderSubtle: '#27272A',
-    inputBorder: '#52525B',
-    inputBackground: '#18181B',
-    textPrimary: '#FAFAFA',
-    textSecondary: '#A1A1AA',
-    textTertiary: '#71717A',
-    muted: '#52525B',
-    primary: '#6366F1',
-    primaryMuted: '#6366F133',
-    primaryText: '#FFFFFF',
-    accent: '#22D3EE',
-    accentMuted: '#22D3EE26',
-    success: '#34D399',
-    successMuted: '#34D39926',
+    background: '#0B0B0F',
+    surface: '#15151A',
+    surfaceElevated: '#1F1F26',
+    border: '#33333C',
+    borderSubtle: '#232329',
+    inputBorder: '#44444E',
+    inputBackground: '#15151A',
+    textPrimary: '#F5F5F7',
+    textSecondary: '#B0B0BA',
+    textTertiary: '#8F8F9B',
+    muted: '#8F8F9B',
+    primary: '#FF7A3D',
+    primaryMuted: '#FF7A3D26',
+    primaryText: '#1A0B05',
+    accent: '#FFB38A',
+    success: '#4ADE80',
+    successMuted: '#4ADE8026',
     warning: '#FBBF24',
-    warningMuted: '#FBBF2426',
-    cardBg: '#1C1C1F',
-    glowPrimary: '#6366F140',
-    glowAccent: '#22D3EE30',
+    danger: '#F87171',
+    dangerMuted: '#F8717126',
+    emergency: '#D32F2F',
+    emergencyText: '#FFFFFF',
+    overlay: 'rgba(0,0,0,0.85)',
   },
 };
 
 const lightTheme: AppTheme = {
   colors: {
-    background: '#FAFAFA',
+    background: '#F6F4EF',
     surface: '#FFFFFF',
-    surfaceElevated: '#F4F4F5',
-    border: '#E4E4E7',
-    borderSubtle: '#F4F4F5',
-    inputBorder: '#D4D4D8',
+    surfaceElevated: '#EEEBE4',
+    border: '#D9D6CF',
+    borderSubtle: '#E8E5DE',
+    inputBorder: '#C9C5BC',
     inputBackground: '#FFFFFF',
-    textPrimary: '#18181B',
-    textSecondary: '#52525B',
-    textTertiary: '#A1A1AA',
-    muted: '#71717A',
-    primary: '#7C7CDB',       // softened indigo (less saturated)
-    primaryMuted: '#7C7CDB18', // reduced opacity for subtler bg
+    textPrimary: '#1A1A1F',
+    textSecondary: '#4F4F58',
+    textTertiary: '#62626C',
+    muted: '#62626C',
+    primary: '#B03A0A',
+    primaryMuted: '#B03A0A1A',
     primaryText: '#FFFFFF',
-    accent: '#0E9AAA',        // slightly muted cyan
-    accentMuted: '#0E9AAA12',
-    success: '#059669',
-    successMuted: '#05966915',
-    warning: '#D97706',
-    warningMuted: '#D9770615',
-    cardBg: '#FFFFFF',
-    glowPrimary: '#7C7CDB20',
-    glowAccent: '#0E9AAA18',
+    accent: '#9A3412',
+    success: '#166534',
+    successMuted: '#16653414',
+    warning: '#B45309',
+    danger: '#B91C1C',
+    dangerMuted: '#B91C1C14',
+    emergency: '#B91C1C',
+    emergencyText: '#FFFFFF',
+    overlay: 'rgba(0,0,0,0.45)',
   },
 };
 

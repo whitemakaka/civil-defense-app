@@ -2,7 +2,7 @@
   "expo": {
     "name": "Civil Defence",
     "slug": "civil-defence-app",
-    "version": "1.0.0",
+    "version": "1.0.19",
     "orientation": "portrait",
     "icon": "./assets/images/civil_defense_dark_mode.png",
     "userInterfaceStyle": "automatic",
@@ -20,8 +20,8 @@
         "foregroundImage": "./assets/images/avatar_dark_mode.png",
         "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": false,
-      "package": "com.anonymous.civildefenceapp"
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.civildefence"
     }
   }
 }

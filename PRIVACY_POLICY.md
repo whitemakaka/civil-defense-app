@@ -1,56 +1,46 @@
-# Privacy Policy for Civil Defense App
+# Privacy Policy for Civil Defence
 
-**Last updated:** January 30, 2026
+**Last updated:** October 18, 2026
 
 ## Overview
 
-Civil Defense App is an offline-first mobile application that provides civil defense information and search functionality. This app is designed with privacy in mind.
+Civil Defence provides offline semantic search over prepared civil-defence and emergency-preparedness notes. The model and search content are included in the installed application.
 
-## Data Collection
+## Search and data collection
 
-**We do NOT collect:**
-- Personal information
-- Location data
-- Usage analytics
-- Crash reports
-- Any data transmitted to external servers
+Questions are processed locally on the device. Search queries, query embeddings and conversation history are not sent to a search service or saved to disk by the application. Conversation history is held in memory while the chat screen is active.
 
-## Offline Operation
+The application does not integrate analytics, advertising, tracking or remote crash-reporting services. It does not collect location data, contacts or personal information as part of search.
 
-This application operates entirely offline. All search functionality, including semantic search and keyword matching, is performed locally on your device. No internet connection is required after installation.
+## Local storage
 
-## Data Storage
+The application uses the following local data:
 
-The app stores only:
-- User preferences (language, theme, search settings) - locally on your device
-- Onboarding completion flag - locally on your device
+- The selected language and theme, in a local app file (`settings.json` in the app's private documents directory).
+- A flag in its private files indicating that the welcome screen has been completed.
+- Bundled notes, source references, document embeddings and tokenizer assets installed with the app.
 
-This data never leaves your device.
+Search queries, results and opened notes are not saved. Search parameters are read from the bundled manifest.
 
-## Third-Party Services
+The application does not upload these files to a developer-operated service. Device storage and app data can be managed through Android settings.
 
-This app does not use any third-party analytics, advertising, or tracking services.
+## External links and contact
 
-## Permissions
+Search and reading bundled notes do not require an internet connection. Selecting a source, project, social or contact link opens a browser or another external application. Those services may use the internet and process information under their own privacy policies. Search queries and conversation history are not attached to these links.
 
-The app may request the following permissions:
-- **Storage** - to access bundled offline content
+If you choose to contact the maintainer by email or submit an issue, the information you send, including your email address or account details, is handled through that service. Do not include private information in public issue reports.
 
-## Children's Privacy
+## Android permissions
 
-This app does not collect any personal information from anyone, including children under 13.
+The release build has no Internet or storage permission and asks for no permission at runtime; the Internet permission is present only in debug builds for the development server. Its manifest keeps only `ACCESS_NETWORK_STATE`, which the bundled ONNX Runtime library declares; it is granted automatically and does not allow any network access. External links such as official sources are handed to the system browser, and the app itself sends no data. The "112" button opens the phone's dialer with 112 filled in; the user places the call. Bundled content and the files above are kept in the app's own storage and need no storage permission. The app contains no runtime permission requests for location, contacts or personal files.
 
-## Changes to This Policy
+The app's local search behavior is separate from any services provided by Android, the app store, your browser or your email application.
 
-Any changes to this privacy policy will be posted on this page with an updated revision date.
+## Changes to this policy
 
-## Contact
+Changes to application data handling will be reflected in this document with an updated date.
 
-If you have questions about this privacy policy, contact us at:
-- Email: apps.whitemakaka@gmail.com
-- GitHub: https://github.com/whitemakaka/civil-defense-app
+## Contact and source code
 
-## Open Source
-
-This application is open source. You can review the complete source code at:
-https://github.com/whitemakaka/civil-defense-app
+- [Email the maintainer](mailto:apps.whitemakaka@gmail.com)
+- [Project source code](https://github.com/whitemakaka/civil-defense-app)

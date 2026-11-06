@@ -4,6 +4,10 @@ import * as FileSystem from 'expo-file-system/legacy';
 import WelcomeScreen from './src/features/onboarding/screens/WelcomeScreen';
 import ChatScreen from './src/features/chat/screens/ChatScreen';
 import { AppProvider } from './src/providers/AppProvider';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getTheme } from './src/constants/theme';
+
+const loadingColors = getTheme('dark').colors;
 
 const getOnboardingFlagPath = () => {
   if (Platform.OS === 'web' || !FileSystem.documentDirectory) {
@@ -42,16 +46,16 @@ export default function App() {
   if (route === 'loading') {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={loadingColors.primary} />
       </View>
     );
   }
 
   return (
     <AppProvider>
-      <View style={styles.container}>
+      <SafeAreaProvider style={styles.container}>
         {route === 'welcome' ? <WelcomeScreen onNext={handleNext} /> : <ChatScreen />}
-      </View>
+      </SafeAreaProvider>
     </AppProvider>
   );
 }
@@ -64,6 +68,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: loadingColors.background,
   },
 });

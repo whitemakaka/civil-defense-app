@@ -2,13 +2,9 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Add custom asset extensions
-config.resolver.assetExts.push(
-  'gguf',
-  'npy',     // numpy embeddings
-  'jsonl',   // records
-  'onnx',    // ONNX model
-);
+if (process.env.METRO_MAX_WORKERS) {
+  config.maxWorkers = Number(process.env.METRO_MAX_WORKERS);
+}
 
 module.exports = config;
 

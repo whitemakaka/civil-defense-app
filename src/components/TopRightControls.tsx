@@ -1,23 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View, Platform, StatusBar, Animated, Easing } from 'react-native';
-import type { AppTheme, ColorScheme } from '../constants/theme';
-import type { Language } from '../constants/strings';
-
-const STATUS_BAR_HEIGHT =
-  Platform.OS === 'android'
-    ? (StatusBar.currentHeight || 24)
-    : Platform.OS === 'ios'
-    ? 44
-    : 0;
-
-const BAR_HEIGHT = STATUS_BAR_HEIGHT + 52;
+import { Alert, Linking, Pressable, StyleSheet, Text, View, Animated, Easing } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { RADIUS, type AppTheme, type ColorScheme } from '../constants/theme';
+import { STRINGS, type Language } from '../constants/strings';
 
 type IndexStatus = 'idle' | 'loading' | 'searching' | 'ready' | 'error';
-
-type CountryInfo = {
-  code: string;
-  flag: string;
-};
 
 type Props = {
   language: Language;
@@ -25,15 +12,21 @@ type Props = {
   colorScheme: ColorScheme;
   onToggleColorScheme: () => void;
   theme: AppTheme;
-  onSettingsPress?: () => void;
   onInfoPress?: () => void;
   variant?: 'solid' | 'transparent';
   indexStatus?: IndexStatus;
-  country?: CountryInfo; // Current country filter
 };
 
 // Status indicator component
-function StatusIndicator({ status, theme }: { status: IndexStatus; theme: AppTheme }) {
+function StatusIndicator({
+  status,
+  theme,
+  language,
+}: {
+  status: IndexStatus;
+  theme: AppTheme;
+  language: Language;
+}) {
   const spinAnim = useRef(new Animated.Value(0)).current;
   
   useEffect(() => {
@@ -62,15 +55,19 @@ function StatusIndicator({ status, theme }: { status: IndexStatus; theme: AppThe
     switch (status) {
       case 'loading': return theme.colors.primary;
       case 'searching': return theme.colors.primary;
-      case 'ready': return '#22c55e'; // green
-      case 'error': return '#ef4444'; // red
+      case 'ready': return theme.colors.success;
+      case 'error': return theme.colors.danger;
       default: return theme.colors.muted;
     }
   };
   
+  const a11yLabel = STRINGS[language].a11yStatus[status];
+
   if (status === 'loading' || status === 'searching') {
     return (
       <Animated.View
+        accessible
+        accessibilityLabel={a11yLabel}
         style={[
           styles.statusDot,
           { 
@@ -85,7 +82,11 @@ function StatusIndicator({ status, theme }: { status: IndexStatus; theme: AppThe
   }
   
   return (
-    <View style={[styles.statusDot, { backgroundColor: getColor() }]} />
+    <View
+      accessible
+      accessibilityLabel={a11yLabel}
+      style={[styles.statusDot, { backgroundColor: getColor() }]}
+    />
   );
 }
 
@@ -95,13 +96,22 @@ export function TopRightControls({
   colorScheme,
   onToggleColorScheme,
   theme,
-  onSettingsPress,
   onInfoPress,
   variant = 'solid',
   indexStatus = 'idle',
-  country,
 }: Props) {
   const isTransparent = variant === 'transparent';
+  const strings = STRINGS[language];
+
+  // Opens the phone dialer with 112 pre-filled (ACTION_DIAL: no permission, no internet).
+  // canOpenURL is intentionally not used: on Android 11+ it needs a <queries> manifest entry.
+  const handleEmergencyPress = async () => {
+    try {
+      await Linking.openURL('tel:112');
+    } catch {
+      Alert.alert(strings.emergencyCallError);
+    }
+  };
 
   return (
     <View
@@ -109,83 +119,77 @@ export function TopRightControls({
         styles.bar,
         {
           backgroundColor: isTransparent ? 'transparent' : theme.colors.background,
-          height: BAR_HEIGHT,
         },
       ]}
     >
-      <View style={[styles.row, { top: STATUS_BAR_HEIGHT + 8 }]}>
-        {/* Status indicator */}
-        <StatusIndicator status={indexStatus} theme={theme} />
-        
-        {/* Country indicator (static - no dropdown until more countries) */}
-        {country && (
-          <View
-            style={[
-              styles.countryPill,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            ]}
-          >
-            <Text style={styles.countryFlag}>{country.flag}</Text>
-            <Text style={[styles.countryCode, { color: theme.colors.textSecondary }]}>
-              {country.code}
-            </Text>
-          </View>
-        )}
-        
+      <View style={styles.outerRow}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Toggle language"
-          onPress={onToggleLanguage}
+          accessibilityLabel={strings.emergencyA11y}
+          hitSlop={4}
+          onPress={handleEmergencyPress}
           style={({ pressed }) => [
-            styles.pill,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+            styles.emergencyPill,
+            { backgroundColor: theme.colors.emergency },
             pressed && styles.pillPressed,
           ]}
         >
-          <Text style={[styles.pillText, { color: theme.colors.textPrimary }]}>{language === 'pl' ? 'EN' : 'PL'}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Toggle theme"
-          onPress={onToggleColorScheme}
-          style={({ pressed }) => [
-            styles.pill,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-            pressed && styles.pillPressed,
-          ]}
-        >
-          <Text style={[styles.pillText, { color: theme.colors.textPrimary }]}>
-            {colorScheme === 'dark' ? '☀︎' : '☽'}
+          <MaterialCommunityIcons name="phone" size={16} color={theme.colors.emergencyText} />
+          <Text style={[styles.emergencyText, { color: theme.colors.emergencyText }]}>
+            {strings.emergencyLabel}
           </Text>
         </Pressable>
-        {onInfoPress && (
+
+        <View style={styles.row}>
+          {/* Status indicator */}
+          <StatusIndicator status={indexStatus} theme={theme} language={language} />
+
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Info"
-            onPress={onInfoPress}
+            accessibilityLabel={strings.a11yToggleLanguage}
+            hitSlop={6}
+            onPress={onToggleLanguage}
             style={({ pressed }) => [
               styles.pill,
               { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
               pressed && styles.pillPressed,
             ]}
           >
-            <Text style={[styles.pillText, { color: theme.colors.textPrimary }]}>ℹ</Text>
+            <Text style={[styles.pillText, { color: theme.colors.textPrimary }]}>{language === 'pl' ? 'EN' : 'PL'}</Text>
           </Pressable>
-        )}
-        {onSettingsPress && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Settings"
-            onPress={onSettingsPress}
+            accessibilityLabel={strings.a11yToggleTheme}
+            hitSlop={6}
+            onPress={onToggleColorScheme}
             style={({ pressed }) => [
               styles.pill,
               { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
               pressed && styles.pillPressed,
             ]}
           >
-            <Text style={[styles.pillText, { color: theme.colors.textPrimary }]}>⚙</Text>
+            <MaterialCommunityIcons
+              name={colorScheme === 'dark' ? 'white-balance-sunny' : 'weather-night'}
+              size={20}
+              color={theme.colors.textPrimary}
+            />
           </Pressable>
-        )}
+          {onInfoPress && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={strings.a11yInfo}
+              hitSlop={6}
+              onPress={onInfoPress}
+              style={({ pressed }) => [
+                styles.pill,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                pressed && styles.pillPressed,
+              ]}
+            >
+              <MaterialCommunityIcons name="information-outline" size={20} color={theme.colors.textPrimary} />
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -193,19 +197,37 @@ export function TopRightControls({
 
 const styles = StyleSheet.create({
   bar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 300,
-    elevation: 300,
+    flexShrink: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  row: {
-    position: 'absolute',
-    right: 12,
+  outerRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  emergencyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: RADIUS.full,
+    minHeight: 44,
+    minWidth: 64,
+    paddingHorizontal: 14,
+  },
+  emergencyText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   statusDot: {
     width: 10,
@@ -214,33 +236,20 @@ const styles = StyleSheet.create({
   },
   pill: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
+    borderRadius: RADIUS.full,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pillPressed: {
     opacity: 0.9,
   },
   pillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  countryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  countryFlag: {
     fontSize: 14,
-  },
-  countryCode: {
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: 0.3,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

@@ -1,0 +1,7 @@
+Gemma is provided under and subject to the Gemma Terms of Use found at ai.google.dev/gemma/terms
+
+This application includes the OPI-PIB/PolDense-17M model (https://huggingface.co/OPI-PIB/PolDense-17M), which is distributed under the Gemma Terms of Use.
+
+Modification notice: the model was converted to ONNX format (model/model.fp32.onnx), and CLS pooling and L2 normalisation were added to its output. The model weights were not retrained.
+
+Use of the model is subject to the use restrictions of the Gemma Terms of Use, including the Gemma Prohibited Use Policy (https://ai.google.dev/gemma/prohibited_use_policy). By using, copying or distributing the model you agree to these restrictions and must pass them on to anyone you distribute it to.

@@ -2,7 +2,9 @@ import { NativeModules, Platform } from 'react-native';
 
 type OfflineSearchNativeModule = {
   warmup: () => Promise<boolean>;
-  tokenize: (text: string, maxLength: number) => Promise<{ inputIds: number[]; attentionMask: number[] }>;
+  loadModel: () => Promise<boolean>;
+  embed: (text: string) => Promise<number[]>;
+  releaseModel: () => Promise<boolean>;
   scoreCandidates: (queryVec: number[], candidates: number[], dim: number) => Promise<number[]>;
 };
 
@@ -20,10 +22,12 @@ function requireAndroid(): OfflineSearchNativeModule {
 
 export const OfflineSearchNative = {
   warmup: async () => requireAndroid().warmup(),
-  tokenize: async (text: string, maxLength: number) => requireAndroid().tokenize(text, maxLength),
+  /** Opens the model directly from the installed app; nothing is copied to storage. */
+  loadModel: async () => requireAndroid().loadModel(),
+  embed: async (text: string) => requireAndroid().embed(text),
+  releaseModel: async () => requireAndroid().releaseModel(),
   scoreCandidates: async (queryVec: Float32Array, candidates: number[], dim: number) => {
     // Keep the JS/native bridge payload small and predictable.
     return requireAndroid().scoreCandidates(Array.from(queryVec), candidates, dim);
   },
 };
-

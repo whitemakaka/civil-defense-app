@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+  <!-- Release needs no network: Metro is debug-only; links and tel:112 go through system intents. -->
+  <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+  <!-- Added by react-native-fs and expo-file-system; the app only uses its bundled assets
+       and private cache/document directories, which need no storage permission. -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+</manifest>

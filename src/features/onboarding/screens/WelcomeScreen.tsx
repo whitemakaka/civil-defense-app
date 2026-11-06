@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { STRINGS } from '../../../constants/strings';
 import { useResponsiveValue } from '../../../hooks/useResponsive';
 import { useSettings } from '../../../stores/settings/settingsStore';
 import { TopRightControls } from '../../../components/TopRightControls';
+import { SourceCatalog } from '../../../components/SourceCatalog';
+import { RADIUS } from '../../../constants/theme';
 import type { AppTheme } from '../../../constants/theme';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -59,8 +62,8 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
   const paddingH = useResponsiveValue<number>({ base: 16, sm: 20, md: 24, lg: 32, xl: 40 });
   const contentMaxW = useResponsiveValue<number>({ base: 720, md: 840, lg: 960, xl: 1040 });
   const logoSize = useResponsiveValue<number>({ base: 140, sm: 160, md: 180, lg: 200 });
-  const bodySize = useResponsiveValue<number>({ base: 14, md: 16 });
-  const bodyLH = useResponsiveValue<number>({ base: 22, md: 24, lg: 26 });
+  const bodySize = useResponsiveValue<number>({ base: 16, md: 17 });
+  const bodyLH = useResponsiveValue<number>({ base: 24, md: 26, lg: 27 });
 
   const logo = colorScheme === 'dark' ? logoDark : logoLight;
 
@@ -76,19 +79,21 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
           theme={theme}
           variant="transparent"
         />
-        <ScrollView contentContainerStyle={[styles.container, { paddingHorizontal: paddingH }]}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingHorizontal: paddingH }]}>
           <View style={[styles.content, { maxWidth: contentMaxW }]}>
             <View style={styles.logoWrapper}>
               <Image source={logo} style={{ width: logoSize, height: logoSize }} resizeMode="contain" />
             </View>
             <View style={styles.textWrapper}>
               <FormattedBody text={STRINGS[language].welcomeBody} theme={theme} fontSize={bodySize} lineHeight={bodyLH} />
+              <SourceCatalog language={language} theme={theme} />
             </View>
           </View>
         </ScrollView>
         <View style={[styles.footer, { paddingHorizontal: paddingH, borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={STRINGS[language].welcomeCtaButton}
             onPress={onNext}
             style={({ pressed }) => [styles.ctaButton, { backgroundColor: theme.colors.primary }, pressed && styles.ctaButtonPressed]}
           >
@@ -107,6 +112,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  scroll: {
+    flex: 1,
+    minHeight: 0,
+  },
   container: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -124,7 +133,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 6,
   },
@@ -132,12 +141,14 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   footer: {
+    flexShrink: 0,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   ctaButton: {
-    borderRadius: 10,
+    borderRadius: RADIUS.full,
+    minHeight: 52,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -146,10 +157,8 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
   },
 });
 

@@ -1,148 +1,109 @@
-/**
- * Hybrid Search Types
- * Offline keyword + vector search for civil defense quotes
- */
+export type SearchLanguage = 'pl' | 'en';
 
-// === Data Bundle Types ===
+export type SearchErrorCode = 'index' | 'model' | 'search';
 
-/**
- * Documents available in PL and EN:
- * - badz_gotowy: "Bądź gotowy – poradnik na czas kryzysu i wojny" (PL) / "Get Ready" (EN)
- * - poradnik_bezpieczenstwa: "Poradnik bezpieczeństwa" (PL) / "Safety Handbook" (EN)
- */
-export interface RecordMeta {
-  // Required (v2)
-  id: string;
-  country: string; // ISO 3166-1 alpha-2 (PL, LT, LV, EE...)
-  lang: 'pl' | 'en';
-  title: string;
-  content: string;
-  keywords: string[];
-  embedding_idx: number;
-  doc_title: string;
-  chapter_title: string;
-  page: number;
-  // Optional
-  doc_stem?: string;
-  source?: string;
-  title_clean?: string;
-  content_clean?: string;
-  keywords_folded?: string[]; // Generated at runtime
+export interface CountryDefinition {
+  code: string;
+  flag: string;
+  name: Record<SearchLanguage, string>;
+}
+
+export interface SearchConfig {
+  local_weight: number;
+  global_weight: number;
+  top_k: number;
+  minimum_query_length: number;
+  debounce_ms: number;
+  idle_unload_seconds: number;
+  relevance_floor?: number;
+  relevance_delta?: number;
+}
+
+export interface BundleFile {
+  path: string;
+  bytes: number;
+  sha256: string;
 }
 
 export interface Manifest {
-  // Embedding model info (MUST match runtime embedder)
-  model?: string; // legacy (v1/v2)
-  model_id?: string; // v3
-  dim: number; // embedding dimension (e.g. 384)
-  dtype: 'float16' | 'float32'; // legacy embedding dtype (keep for compat)
-  
-  // Dataset info
-  count: number; // number of records
-  schema_version: string; // bundle format version (e.g. "v1")
-  
-  // File references
-  records_file: string; // e.g. "records_meta.jsonl"
-  embeddings_file: string; // e.g. "embeddings.f16.npy" or "embeddings.int8.bin"
-  keyword_index_file?: string; // e.g. "keyword_index.json"
-
-  // v3 extras (on-device embedding)
-  onnx_file?: string;
-  tokenizer_file?: string;
-  tokenizer_type?: 'sentencepiece_unigram' | string;
-  max_length?: number;
-  pooling?: 'mean' | string;
-  normalize?: 'l2' | string;
-
-  // v4a embeddings quantization
-  embeddings_dtype?: 'float16' | 'float32' | 'int8' | string;
-  embeddings_scale_file?: string;
-  embeddings_scale_dtype?: 'float16' | 'float32' | string;
-  embeddings_quant?: 'int8_per_vector_scale' | string;
-
-  // v5: tokenizer in model (ORT Extensions / preprocessing in graph)
-  preprocessing?: 'in_model' | string;
-  requires_ort_extensions?: boolean;
-  onnx_format?: 'onnx' | 'ort' | string;
-  embedder_io?: {
-    input_text_name: string;
-    output_embedding_name: string;
-  };
+  format: string;
+  bundle_id: string;
+  note_count: number;
+  count: number;
+  local_vector_count: number;
+  global_vector_count: number;
+  embedding_text_separator: string;
+  dim: number;
+  languages: SearchLanguage[];
+  country_codes: string[];
+  countries: CountryDefinition[];
+  search: SearchConfig;
+  model_id: string;
+  onnx_file: string;
+  tokenizer_file: string;
+  query_prefix: string;
+  max_length: number;
+  model_inputs: string[];
+  model_output: string;
+  pooling: 'cls';
+  normalization: 'l2';
+  records_file: string;
+  notes_file: string;
+  embeddings_file: string;
+  embeddings_dtype: 'int8';
+  embeddings_scale_file: string;
+  embeddings_scale_dtype: 'float16';
+  embeddings_quantization: 'symmetric_per_record';
+  files: BundleFile[];
 }
 
-export type KeywordIndex = Record<string, number[]>; // keyword_folded -> embedding_idx[]
-
-// === Runtime Types ===
-
-export interface HybridIndex {
-  records: RecordMeta[];
-  embeddings: Float32Array; // flattened N x D matrix
-  dim: number;
-  keywordIndex: KeywordIndex;
-  manifest: Manifest; // keep manifest for validation
+export interface RecordMeta {
+  id: string;
+  note_id: string;
+  embedding_scope: 'local' | 'global';
+  line_index: number | null;
+  country_code: string;
+  lang: SearchLanguage;
+  topic: string;
+  subtopic: string | null;
+  text: string;
+  keywords?: string | null;
+  embedding_idx: number;
 }
 
 export interface SearchOptions {
-  country?: string; // Filter by country (PL, LT, LV...)
-  lang?: 'pl' | 'en'; // Filter by language
-  topK?: number;
-  alpha?: number; // weight for vector similarity (default 0.85)
-  beta?: number;  // weight for keyword score (default 0.15)
-  candidateSetSize?: number; // max candidates from keyword stage (default 150-400)
+  localWeight: number;
+  globalWeight: number;
+  lang: SearchLanguage;
+  topK: number;
 }
 
-export interface SearchResult {
-  id: string;
-  score: number;
-  country: string;
-  lang: 'pl' | 'en';
+export interface NoteContent {
+  global_embedding_idx: number;
+  topic: string;
+  subtopic: string | null;
+  note: string[];
+  sources: NoteSource[];
+}
+
+export interface NoteSource {
+  source: string;
   title: string;
-  content: string;
-  doc_title: string;
-  chapter_title: string;
-  page: number;
-  source?: string;
-  keywords: string[];
-  keywordScore: number;
+  country: string;
+  pages: number[];
+  url?: string;
+}
+
+export interface NoteMeta {
+  id: string;
+  content: Record<SearchLanguage, NoteContent>;
+}
+
+export interface SearchResult extends NoteMeta, NoteContent {
+  lang: SearchLanguage;
+  matchedLineIndex: number;
+  score: number;
   vectorScore: number;
-
-  // Legacy/compat fields used by UI (older bundles / older record schemas)
-  title_clean?: string;
-  content_clean?: string;
-  doc_stem?: string;
-  document?: string;
-  document_id?: string;
-  document_title?: string;
-  documentName?: string;
-  chapter?: string;
-  section?: string;
-  page_number?: number;
-  pageNumber?: number;
-  distance?: number;
-}
-
-// === Embedder Interface ===
-
-export interface Embedder {
-  embed(text: string): Promise<Float32Array>;
-  embedBatch?(texts: string[]): Promise<Float32Array[]>;
-  getOutputDim(): number; // embedder output dimension
-  getModelId(): string; // embedder model identifier
-}
-
-// === Validation Types ===
-
-export interface BundleValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-  manifest?: Manifest;
-}
-
-export enum ValidationError {
-  MODEL_MISMATCH = 'MODEL_MISMATCH',
-  DIM_MISMATCH = 'DIM_MISMATCH',
-  COUNT_MISMATCH = 'COUNT_MISMATCH',
-  SCHEMA_VERSION_MISMATCH = 'SCHEMA_VERSION_MISMATCH',
-  MISSING_FILES = 'MISSING_FILES',
+  localVectorScore: number;
+  globalVectorScore: number;
 }

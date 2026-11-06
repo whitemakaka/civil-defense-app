@@ -1,82 +1,99 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SafeAreaView, StyleSheet, View, FlatList, Platform, KeyboardAvoidingView, ActivityIndicator, LayoutAnimation, UIManager, Keyboard } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useResponsiveValue } from '../../../hooks/useResponsive';
 import { useSettings } from '../../../stores/settings/settingsStore';
-import { useSearchSettings, shouldTriggerSearch, AVAILABLE_COUNTRIES } from '../../../stores/settings/searchSettingsStore';
+import { useSearchSettings } from '../../../stores/settings/searchSettingsStore';
 import { STRINGS } from '../../../constants/strings';
 import { TopRightControls } from '../../../components/TopRightControls';
-import { SettingsModal } from '../../../components/SettingsModal';
 import { InfoModal } from '../../../components/InfoModal';
-import { SearchDetailScreen } from '../../search/screens/SearchDetailScreen';
-import { useHybridSearch } from '../../search/hooks/useHybridSearch';
-import { formatQuoteText } from '../../search/utils/displayText';
-import type { SearchResult } from '../../search/types';
+import { formatNoteText } from '../../search/utils/displayText';
+import type { SearchConfig, SearchResult } from '../../search/types';
 import { SearchInsight, SuggestionsList, ChatInput, ChatMessageBubble, type ChatMessage } from '../components';
+import { useChatSearch } from '../hooks/useChatSearch';
+
+const WELCOME_ID = 'welcome-assistant';
 
 export default function ChatScreen() {
-  const { language, colorScheme, theme, toggleColorScheme, toggleLanguage } = useSettings();
-  const { alpha, beta, getMaxCandidates, getTopK, getEffectiveLang, getEffectiveCountry, countryFilter, idleUnloadTimeout, debounceMs, minQueryLength, isHydrated, syncLanguageFilterFromUi } = useSearchSettings();
-  const { status: searchStatus, results: liveResults, debug, search, clearResults, resetIdleTimer, prewarmEmbedder, isSemanticReady, isSemanticLoading, resultsQuery, isReady, recordCount, error: searchError } = useHybridSearch({ autoLoad: true, autoWarmEmbedder: true, idleUnloadTimeout, idleUnloadMode: 'embedder' });
+  const { theme } = useSettings();
+  const { bundleConfigReady, searchConfig, configurationError } = useSearchSettings();
+  if (!bundleConfigReady) {
+    return <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}><View style={styles.loading}><ActivityIndicator size="large" color={theme.colors.primary} /></View></SafeAreaView>;
+  }
+  if (configurationError !== null || searchConfig === null) {
+    return <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}><View style={styles.loading}><Text style={{ color: theme.colors.warning }}>{configurationError}</Text></View></SafeAreaView>;
+  }
+  return <ConfiguredChatScreen searchConfig={searchConfig} />;
+}
 
+function ConfiguredChatScreen({ searchConfig }: { searchConfig: SearchConfig }) {
+  const { language, colorScheme, theme, toggleColorScheme, toggleLanguage } = useSettings();
+  const {
+    inputText,
+    onChangeText,
+    onSubmit,
+    onFocus,
+    results,
+    isSearching,
+    isStale,
+    noMatch,
+    indexStatus,
+    errorText,
+    debug,
+    takeResult,
+    localizeResult,
+  } = useChatSearch({ searchConfig, language });
   const paddingH = useResponsiveValue<number>({ base: 12, sm: 16, md: 20, lg: 28, xl: 40 });
   const bubbleMaxWidth = useResponsiveValue({ base: '85%', md: '80%', lg: '72%', xl: '66%' }) as `${number}%`;
   const inputPaddingV = useResponsiveValue<number>({ base: 10, md: 12, lg: 14 });
-  const suggestionsMaxHeight = useResponsiveValue<number>({ base: 300, md: 400, lg: 450 });
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffsetsRef = useRef(new Map<string, number>());
+  const pendingScrollTargetRef = useRef<string | null>(null);
 
-  const flatListRef = useRef<FlatList>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [{ id: 'welcome-assistant', role: 'assistant', text: language === 'pl' ? 'Cześć! Wyszukaj cytaty z oficjalnych poradników obrony cywilnej.' : 'Hi! Search quotes from official civil defense guides.' }]);
-  const [inputText, setInputText] = useState('');
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [{ id: WELCOME_ID, role: 'assistant', text: STRINGS[language].welcomeChat }]);
   const [infoVisible, setInfoVisible] = useState(false);
-  const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
 
-  const isSearching = searchStatus === 'searching';
-  const trimmedQuery = inputText.trim();
-  const isStaleResults = Boolean(resultsQuery && resultsQuery !== trimmedQuery);
-  const showSuggestions = trimmedQuery.length >= minQueryLength || liveResults.length > 0 || isSearching;
+  const showSuggestions = results.length > 0;
 
-  useEffect(() => { if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true); }, []);
-  useEffect(() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); }, [isSearching, liveResults.length, showSuggestions]);
-  useEffect(() => { syncLanguageFilterFromUi(language); }, [language, isHydrated, syncLanguageFilterFromUi]);
-  useEffect(() => { return () => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); }; }, []);
-  useEffect(() => { setMessages(prev => prev[0]?.id === 'welcome-assistant' ? [{ ...prev[0], text: language === 'pl' ? 'Cześć! Wyszukaj cytaty z oficjalnych poradników obrony cywilnej.' : 'Hi! Search quotes from official civil defense guides.' }, ...prev.slice(1)] : prev); }, [language]);
+  const scrollToPendingTarget = useCallback(() => {
+    if (pendingScrollTargetRef.current === null) return;
+    requestAnimationFrame(() => {
+      const target = pendingScrollTargetRef.current;
+      if (target === null) return;
+      const offset = scrollOffsetsRef.current.get(target);
+      if (offset === undefined) return;
+      scrollRef.current?.scrollTo({ y: offset, animated: false });
+      pendingScrollTargetRef.current = null;
+    });
+  }, []);
 
-  const performSearch = useCallback(async (query: string) => {
-    if (!shouldTriggerSearch(query.length, minQueryLength)) { clearResults(); return; }
-    resetIdleTimer();
-    await search(query, { lang: getEffectiveLang(language), country: getEffectiveCountry(), topK: getTopK(), alpha, beta, candidateSetSize: getMaxCandidates() });
-  }, [search, clearResults, language, alpha, beta, getMaxCandidates, getTopK, getEffectiveLang, getEffectiveCountry, minQueryLength, resetIdleTimer]);
-
-  const handleInputChange = useCallback((text: string) => {
-    setInputText(text);
-    resetIdleTimer();
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const trimmed = text.trim();
-    if (!shouldTriggerSearch(trimmed.length, minQueryLength)) { clearResults(); return; }
-    debounceTimerRef.current = setTimeout(() => performSearch(trimmed), debounceMs);
-  }, [performSearch, debounceMs, minQueryLength, clearResults, resetIdleTimer]);
-
-  const handleSelectResult = useCallback((result: SearchResult) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
+  useEffect(() => {
+    if (showSuggestions) {
+      pendingScrollTargetRef.current = 'suggestions';
+      scrollToPendingTarget();
     }
-    setMessages(prev => [...prev, { id: `user-${Date.now()}`, role: 'user', text: inputText.trim() }, { id: `assistant-${Date.now()}`, role: 'assistant', text: formatQuoteText(result.content), result }]);
-    setInputText('');
-    clearResults();
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-  }, [inputText, clearResults]);
+  }, [showSuggestions, results, scrollToPendingTarget]);
+  useEffect(() => {
+    setMessages(previousMessages =>
+      previousMessages.map(message => {
+        if (message.id === WELCOME_ID) return { ...message, text: STRINGS[language].welcomeChat };
+        if (message.role !== 'assistant' || !message.result) return message;
+        const result = localizeResult(message.result, language);
+        return { ...message, text: formatNoteText(result.note), result };
+      }),
+    );
+  }, [language, localizeResult]);
 
-  const handleFocus = useCallback(() => { resetIdleTimer(); void prewarmEmbedder(); }, [resetIdleTimer, prewarmEmbedder]);
-
-  if (!isHydrated) return <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}><View style={styles.loading}><ActivityIndicator size="large" color={theme.colors.primary} /></View></SafeAreaView>;
-  if (selectedResult) return <SearchDetailScreen hit={selectedResult} onClose={() => setSelectedResult(null)} />;
+  const handleSelectResult = useCallback((selected: SearchResult) => {
+    const { query, result } = takeResult(selected);
+    const timestamp = Date.now();
+    pendingScrollTargetRef.current = `user-${timestamp}`;
+    setMessages(prev => [...prev, { id: `user-${timestamp}`, role: 'user', text: query }, { id: `assistant-${timestamp}`, role: 'assistant', text: formatNoteText(result.note), result }]);
+  }, [takeResult]);
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} enabled={Platform.OS === 'ios'}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
         <StatusBar style={colorScheme === 'light' ? 'dark' : 'light'} />
         <TopRightControls
@@ -85,27 +102,45 @@ export default function ChatScreen() {
           colorScheme={colorScheme}
           onToggleColorScheme={toggleColorScheme}
           theme={theme}
-          onInfoPress={() => { Keyboard.dismiss(); setSettingsVisible(false); setInfoVisible(true); }}
-          onSettingsPress={() => { Keyboard.dismiss(); setInfoVisible(false); setSettingsVisible(true); }}
-          indexStatus={searchStatus === 'ready' ? (isSemanticLoading ? 'loading' : (isSemanticReady ? 'ready' : 'idle')) : searchStatus}
-          country={AVAILABLE_COUNTRIES.find(c => c.code === countryFilter)}
+          onInfoPress={() => { Keyboard.dismiss(); setInfoVisible(true); }}
+          indexStatus={indexStatus}
         />
         <InfoModal visible={infoVisible} onClose={() => setInfoVisible(false)} />
-        <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
 
         <View style={[styles.container, { paddingHorizontal: paddingH }]}>
-          <SearchInsight debug={debug} theme={theme} />
-          <FlatList
-            ref={flatListRef}
+          <ScrollView
+            ref={scrollRef}
             style={styles.list}
             contentContainerStyle={styles.listContent}
-            data={messages}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => <ChatMessageBubble message={item} bubbleMaxWidth={bubbleMaxWidth} theme={theme} colorScheme={colorScheme} onViewDetails={setSelectedResult} />}
-          />
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={scrollToPendingTarget}
+            onLayout={() => {
+              if (showSuggestions) {
+                pendingScrollTargetRef.current = 'suggestions';
+                scrollToPendingTarget();
+              }
+            }}
+          >
+            {messages.map(message => (
+              <View key={message.id} onLayout={event => {
+                scrollOffsetsRef.current.set(message.id, event.nativeEvent.layout.y);
+                scrollToPendingTarget();
+              }}>
+                <ChatMessageBubble message={message} bubbleMaxWidth={bubbleMaxWidth} theme={theme} language={language} />
+              </View>
+            ))}
+            <View onLayout={event => {
+              scrollOffsetsRef.current.set('suggestions', event.nativeEvent.layout.y);
+              scrollToPendingTarget();
+            }}>
+              <SearchInsight debug={debug} theme={theme} />
+              {errorText !== null && <Text style={[styles.status, { color: theme.colors.warning }]}>{errorText}</Text>}
+              {showSuggestions && <SuggestionsList results={results} isSearching={isSearching} isStale={isStale} theme={theme} language={language} onSelect={handleSelectResult} />}
+              {noMatch && <Text style={[styles.status, { color: theme.colors.textSecondary }]}>{STRINGS[language].noResults}</Text>}
+            </View>
+          </ScrollView>
           <View style={styles.inputArea}>
-            {showSuggestions && <SuggestionsList results={liveResults} isSearching={isSearching} isStale={isStaleResults} maxHeight={suggestionsMaxHeight} theme={theme} language={language} onSelect={handleSelectResult} />}
-            <ChatInput value={inputText} placeholder={STRINGS[language].chatPlaceholder} isSearching={isSearching} showSuggestions={showSuggestions} paddingV={inputPaddingV} theme={theme} onChangeText={handleInputChange} onSubmit={() => { if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current); if (shouldTriggerSearch(trimmedQuery.length, minQueryLength) && liveResults.length === 0) performSearch(trimmedQuery); }} onFocus={handleFocus} />
+            <ChatInput value={inputText} placeholder={STRINGS[language].chatPlaceholder} isSearching={isSearching} showSuggestions={showSuggestions} paddingV={inputPaddingV} theme={theme} onChangeText={onChangeText} onSubmit={onSubmit} onFocus={onFocus} />
           </View>
         </View>
       </SafeAreaView>
@@ -117,8 +152,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   safeArea: { flex: 1 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, paddingTop: 96, paddingBottom: 16 },
-  list: { flex: 1 },
-  listContent: { paddingTop: 116, paddingBottom: 8 },
-  inputArea: { paddingTop: 8 },
+  container: { flex: 1, minHeight: 0 },
+  list: { flex: 1, minHeight: 0 },
+  listContent: { paddingBottom: 8 },
+  inputArea: { flexShrink: 0, paddingVertical: 8 },
+  status: { fontSize: 13, paddingVertical: 4 },
 });

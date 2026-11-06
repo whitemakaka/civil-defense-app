@@ -1,72 +1,60 @@
-import type { SearchResult, SearchOptions } from '../types';
+import type { SearchOptions, SearchResult } from '../types';
 import type { LoadedBundle } from '../infrastructure/loaders/BundleLoader';
-import { matchKeywords, selectCandidates } from '../domain/services/KeywordMatcher';
-import { rankHybrid, rankVectorOnly } from '../domain/services/HybridRanker';
+import { rankSemantic } from '../domain/services/SemanticRanker';
 import { getEmbedder, getEmbedderType } from '../infrastructure/embedders';
 import { OfflineSearchNative } from '../infrastructure/native/OfflineSearchNative';
 import type { DebugInfo } from './useSearchState';
 
-async function scoreVectorsNative(queryVec: Float32Array, candidates: number[], dim: number): Promise<Map<number, number>> {
+async function scoreVectors(
+  queryVector: Float32Array,
+  embeddingIndexes: number[],
+  dimension: number,
+): Promise<Map<number, number>> {
   await OfflineSearchNative.warmup();
-  const scores = await OfflineSearchNative.scoreCandidates(queryVec, candidates, dim);
-  const out = new Map<number, number>();
-  for (let i = 0; i < candidates.length; i++) out.set(candidates[i], scores[i] ?? 0);
-  return out;
+  const values = await OfflineSearchNative.scoreCandidates(
+    queryVector,
+    embeddingIndexes,
+    dimension,
+  );
+  if (values.length !== embeddingIndexes.length) {
+    throw new Error('Native semantic scorer returned an invalid result count');
+  }
+  return new Map(embeddingIndexes.map((index, position) => [index, values[position]]));
 }
 
 export interface SearchExecutionResult {
   results: SearchResult[];
   debug: DebugInfo;
-  embedderType: 'onnx' | 'none';
   isSemanticReady: boolean;
 }
 
 export async function executeSearch(
   query: string,
   bundle: LoadedBundle,
-  options: SearchOptions
+  options: SearchOptions,
 ): Promise<SearchExecutionResult> {
-  const { topK = 10, alpha = 0.85, beta = 0.15, candidateSetSize = 300, lang, country } = options;
+  const candidates = bundle.records
+    .filter(record => record.lang === options.lang)
+    .map(record => record.embedding_idx);
 
-  const { scores: kwScores, tokens, hits } = matchKeywords(query, bundle.keywordIndex);
-
-  const recordFilter = (idx: number): boolean => {
-    const rec = bundle.records[idx];
-    if (lang && rec.lang !== lang) return false;
-    if (country && rec.country && rec.country !== country) return false;
-    return true;
-  };
-
-  const candidates = selectCandidates(kwScores, candidateSetSize, bundle.records.map(r => r.lang), undefined, recordFilter);
-
-  const embedder = await getEmbedder(bundle.dim);
-  const eType = getEmbedderType();
-  const queryVec = await embedder.embed(query);
-
-  if (candidates.length === 0) {
-    const all = bundle.records.map((_, i) => i).filter(recordFilter);
-    const vecScores = await scoreVectorsNative(queryVec, all, bundle.dim);
-    const searchResults = rankVectorOnly(bundle.records, vecScores, topK);
-    const avgVec = searchResults.length > 0 ? searchResults.reduce((s, r) => s + r.vectorScore, 0) / searchResults.length : 0;
-
-    return {
-      results: searchResults,
-      debug: { tokens, candidatesCount: 0, keywordHits: hits, mode: 'vector-only', alpha: 1, beta: 0, avgVectorScore: avgVec, avgKeywordScore: 0, embedderType: eType },
-      embedderType: eType,
-      isSemanticReady: eType === 'onnx' && embedder.isReady(),
-    };
-  }
-
-  const vecScores = await scoreVectorsNative(queryVec, candidates, bundle.dim);
-  const searchResults = rankHybrid({ records: bundle.records, candidates, keywordScores: kwScores, vectorScores: vecScores, alpha, beta, topK });
-
-  const avgVec = searchResults.length > 0 ? searchResults.reduce((s, r) => s + r.vectorScore, 0) / searchResults.length : 0;
-  const avgKw = searchResults.length > 0 ? searchResults.reduce((s, r) => s + r.keywordScore, 0) / searchResults.length : 0;
-
+  const embedder = await getEmbedder(bundle.manifest);
+  const queryVector = await embedder.embed(query);
+  const vectorScores = await scoreVectors(queryVector, candidates, bundle.dim);
+  const results = rankSemantic({
+    records: bundle.records,
+    notes: bundle.notes,
+    candidates,
+    vectorScores,
+    localWeight: options.localWeight,
+    globalWeight: options.globalWeight,
+    topK: options.topK,
+  });
   return {
-    results: searchResults,
-    debug: { tokens, candidatesCount: candidates.length, keywordHits: hits, mode: 'hybrid', alpha, beta, avgVectorScore: avgVec, avgKeywordScore: avgKw, embedderType: eType },
-    embedderType: eType,
-    isSemanticReady: eType === 'onnx' && embedder.isReady(),
+    results,
+    debug: {
+      avgLocalScore: results.length ? results.reduce((sum, result) => sum + result.localVectorScore, 0) / results.length : 0,
+      avgGlobalScore: results.length ? results.reduce((sum, result) => sum + result.globalVectorScore, 0) / results.length : 0,
+    },
+    isSemanticReady: getEmbedderType() === 'onnx' && embedder.isReady(),
   };
 }

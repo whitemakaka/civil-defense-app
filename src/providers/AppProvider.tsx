@@ -1,13 +1,13 @@
 import React from 'react';
 import { SettingsProvider } from '../stores/settings/settingsStore';
-import { SearchSettingsProvider } from '../stores/settings/searchSettingsStore';
+import { BundleProvider } from '../stores/bundle/bundleStore';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <SettingsProvider>
-      <SearchSettingsProvider>
+      <BundleProvider>
         {children}
-      </SearchSettingsProvider>
+      </BundleProvider>
     </SettingsProvider>
   );
 }

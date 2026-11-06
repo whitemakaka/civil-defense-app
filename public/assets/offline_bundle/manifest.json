@@ -1,0 +1,99 @@
+{
+  "format": "civil-defense-search-assets",
+  "bundle_id": "ab6421dd0cccfab0c147514dcf3521cc7321c3d93c7a26ad0f8f524373d229fb",
+  "note_count": 93,
+  "line_count": 848,
+  "count": 1882,
+  "local_vector_count": 1696,
+  "global_vector_count": 186,
+  "embedding_text_separator": "\n",
+  "dim": 256,
+  "languages": [
+    "pl",
+    "en"
+  ],
+  "country_codes": [
+    "PL"
+  ],
+  "countries": [
+    {
+      "code": "PL",
+      "flag": "🇵🇱",
+      "name": {
+        "pl": "Polska",
+        "en": "Poland"
+      }
+    }
+  ],
+  "search": {
+    "local_weight": 0.75,
+    "global_weight": 0.25,
+    "top_k": 10,
+    "minimum_query_length": 3,
+    "relevance_floor": 0.69,
+    "relevance_delta": 0.02,
+    "debounce_ms": 300,
+    "idle_unload_seconds": 300
+  },
+  "model_id": "OPI-PIB/PolDense-17M",
+  "onnx_file": "model/model.fp32.onnx",
+  "tokenizer_file": "model/tokenizer.json",
+  "query_prefix": "[query]: ",
+  "max_length": 7999,
+  "model_inputs": [
+    "input_ids",
+    "attention_mask"
+  ],
+  "model_output": "embedding",
+  "pooling": "cls",
+  "normalization": "l2",
+  "records_file": "records.jsonl",
+  "notes_file": "notes.jsonl",
+  "embeddings_file": "embeddings.int8.bin",
+  "embeddings_dtype": "int8",
+  "embeddings_scale_file": "embeddings.scale.f16.npy",
+  "embeddings_scale_dtype": "float16",
+  "embeddings_quantization": "symmetric_per_record",
+  "files": [
+    {
+      "path": "records.jsonl",
+      "bytes": 818441,
+      "sha256": "e7e2a7dbbfb7e1e1ef876d23baba843470349c58bdb81d1972f10e70fe210657"
+    },
+    {
+      "path": "notes.jsonl",
+      "bytes": 298402,
+      "sha256": "eb62fd4c88fc98718a07144cc9ac67801f27b7cefff27ee7b019f849971ea002"
+    },
+    {
+      "path": "embeddings.int8.bin",
+      "bytes": 481792,
+      "sha256": "94879def1981db8d70b3c38c8b7e784775c4ad22cc7eae0d0cab5b93b7b83004"
+    },
+    {
+      "path": "embeddings.scale.f16.npy",
+      "bytes": 3892,
+      "sha256": "21eb9c8e2a69e180236f8a9292a8fa2cc1589b8f4164a75a34ea10e4db25fd29"
+    },
+    {
+      "path": "model/model.fp32.onnx",
+      "bytes": 67346903,
+      "sha256": "a00af1fddd407a85579d328fc9f4fabf0e72eab2440e75a7a1b3b133559f7c2d"
+    },
+    {
+      "path": "model/tokenizer.json",
+      "bytes": 3583479,
+      "sha256": "f7e7b8cb92d25b50ebbc4d8fa5b2c277530350e8876856faf8122134240e9ec7"
+    },
+    {
+      "path": "model/tokenizer_config.json",
+      "bytes": 20833,
+      "sha256": "4b168e94ec1dbe1fd178559eea39bbbe9df71ee97cfecd0292e430a34aa8d063"
+    },
+    {
+      "path": "model/special_tokens_map.json",
+      "bytes": 694,
+      "sha256": "ea97ecdbcc73713039d8d64dbb05e3689495c96657fbd9a18f5bed381be81049"
+    }
+  ]
+}

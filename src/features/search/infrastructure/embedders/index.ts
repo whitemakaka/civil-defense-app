@@ -1,62 +1,59 @@
-/**
- * Embedder factory
- * ONNX only (no fallback)
- */
-
+import type { Manifest } from '../../types';
 import { createOnnxEmbedder, unloadOnnxEmbedder } from './OnnxEmbedder';
 
 export interface Embedder {
-  embed(text: string): Float32Array | Promise<Float32Array>;
+  embed(text: string): Promise<Float32Array>;
   getDim(): number;
   isReady(): boolean;
   type: 'onnx';
 }
 
-let embedderInstance: Embedder | null = null;
-let initPromise: Promise<Embedder> | null = null;
+let embedder: Embedder | null = null;
+let initialization: Promise<Embedder> | null = null;
+let bundleId: string | null = null;
 
-export async function getEmbedder(dim: number): Promise<Embedder> {
-  if (embedderInstance) return embedderInstance;
-  
-  if (initPromise) return initPromise;
-  
-  initPromise = initEmbedder(dim);
-  return initPromise;
-}
-
-async function initEmbedder(dim: number): Promise<Embedder> {
-  const onnx = await createOnnxEmbedder();
-  embedderInstance = {
-    embed: (text: string) => onnx.embed(text),
-    getDim: () => onnx.getDim(),
-    isReady: () => onnx.isReady(),
-    type: 'onnx',
-  };
-  console.log('[Embedder] ONNX loaded - real semantic search');
-  return embedderInstance;
-}
-
-export function getEmbedderSync(dim: number): Embedder {
-  if (!embedderInstance) {
-    throw new Error('Embedder not initialized. Use getEmbedder() first.');
+export async function getEmbedder(manifest: Manifest): Promise<Embedder> {
+  if (embedder !== null) {
+    if (bundleId !== manifest.bundle_id) {
+      throw new Error('A different semantic bundle is already initialized');
+    }
+    return embedder;
   }
-  return embedderInstance;
-}
+  if (initialization !== null) {
+    return initialization;
+  }
 
-export function isEmbedderReady(): boolean {
-  return embedderInstance !== null && embedderInstance.isReady();
+  initialization = (async () => {
+    const onnx = await createOnnxEmbedder(manifest);
+    if (onnx.getDim() !== manifest.dim) {
+      throw new Error('Semantic model dimension does not match the bundle');
+    }
+    bundleId = manifest.bundle_id;
+    embedder = {
+      embed: onnx.embed,
+      getDim: onnx.getDim,
+      isReady: onnx.isReady,
+      type: 'onnx',
+    };
+    return embedder;
+  })();
+
+  try {
+    return await initialization;
+  } finally {
+    initialization = null;
+  }
 }
 
 export function getEmbedderType(): 'onnx' | 'none' {
-  return embedderInstance?.type ?? 'none';
+  return embedder?.type ?? 'none';
 }
 
 export async function resetEmbedder(): Promise<void> {
-  const current = embedderInstance;
-  embedderInstance = null;
-  initPromise = null;
-
-  if (current?.type === 'onnx') {
-    await unloadOnnxEmbedder();
+  if (initialization !== null) {
+    await initialization;
   }
+  embedder = null;
+  bundleId = null;
+  await unloadOnnxEmbedder();
 }

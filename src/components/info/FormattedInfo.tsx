@@ -12,7 +12,7 @@ export function FormattedInfo({ text, theme }: Props) {
       const isHeader = firstLine.endsWith(':') && !firstLine.startsWith('•');
 
       return (
-        <View key={idx} style={idx > 0 ? styles.block : undefined}>
+        <View key={idx} style={idx > 0 ? [styles.block, { borderTopColor: theme.colors.border }] : undefined}>
           {isHeader && <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{firstLine}</Text>}
           {(isHeader ? lines.slice(1) : lines).map((line, i) => (
             <Text key={i} style={[styles.body, { color: theme.colors.textSecondary }]}>{line}</Text>
@@ -26,7 +26,7 @@ export function FormattedInfo({ text, theme }: Props) {
 }
 
 const styles = StyleSheet.create({
-  block: { marginTop: 18, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(128,128,128,0.3)' },
+  block: { marginTop: 18, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
   title: { fontSize: 13, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   body: { fontSize: 13, lineHeight: 20 },
 });
